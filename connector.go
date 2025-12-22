@@ -111,6 +111,12 @@ func withUserConfig(ucfg config.UserConfig) ConnOption {
 	}
 }
 
+func WithArrowConfig(acfg config.ArrowConfig) ConnOption {
+	return func(c *config.Config) {
+		c.ArrowConfig = acfg
+	}
+}
+
 // WithServerHostname sets up the server hostname. Mandatory.
 func WithServerHostname(host string) ConnOption {
 	return func(c *config.Config) {
