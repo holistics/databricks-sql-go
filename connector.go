@@ -111,6 +111,13 @@ func withUserConfig(ucfg config.UserConfig) ConnOption {
 	}
 }
 
+// https://github.com/databricks/databricks-sql-go/issues/274
+func WithArrowNativeDecimal(useArrowNativeDecimal bool) ConnOption {
+	return func(c *config.Config) {
+		c.ArrowConfig.UseArrowNativeDecimal = useArrowNativeDecimal
+	}
+}
+
 // WithServerHostname sets up the server hostname. Mandatory.
 func WithServerHostname(host string) ConnOption {
 	return func(c *config.Config) {
