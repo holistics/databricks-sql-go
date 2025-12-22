@@ -118,6 +118,12 @@ func WithArrowNativeDecimal(useArrowNativeDecimal bool) ConnOption {
 	}
 }
 
+func WithArrowNativeComplexTypes(useArrowNativeComplexTypes bool) ConnOption {
+	return func(c *config.Config) {
+		c.ArrowConfig.UseArrowNativeComplexTypes = useArrowNativeComplexTypes
+	}
+}
+
 // WithServerHostname sets up the server hostname. Mandatory.
 func WithServerHostname(host string) ConnOption {
 	return func(c *config.Config) {
