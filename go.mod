@@ -6,7 +6,6 @@ require (
 	github.com/apache/arrow/go/v12 v12.0.1
 	github.com/apache/thrift v0.17.0
 	github.com/coreos/go-oidc/v3 v3.5.0
-	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/joho/godotenv v1.4.0
 	github.com/mattn/go-isatty v0.0.20
 	github.com/pierrec/lz4/v4 v4.1.15
@@ -45,7 +44,7 @@ require (
 	golang.org/x/tools v0.6.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
