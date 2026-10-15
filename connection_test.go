@@ -90,6 +90,47 @@ func TestConn_executeStatement(t *testing.T) {
 		assert.Equal(t, 1, executeStatementCount)
 	})
 
+	t.Run("executeStatement should cancel the statement when the context is cancelled during its submission", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		operationHandle := &cli_service.TOperationHandle{
+			OperationId: &cli_service.THandleIdentifier{
+				GUID:   []byte{1, 2, 3, 4, 2, 23, 4, 2, 3, 1, 2, 3, 4, 223, 34, 54},
+				Secret: []byte("b"),
+			},
+		}
+		var cancelledHandles []*cli_service.TOperationHandle
+		testClient := &client.TestClient{
+			FnExecuteStatement: func(submitCtx context.Context, req *cli_service.TExecuteStatementReq) (r *cli_service.TExecuteStatementResp, err error) {
+				// the caller is gone while the statement is being submitted, which the server has received already
+				cancel()
+				select {
+				case <-submitCtx.Done(): // the submission is aborted: its response, with the statement's handle, is lost
+					return nil, submitCtx.Err()
+				case <-time.After(50 * time.Millisecond):
+				}
+				return &cli_service.TExecuteStatementResp{
+					Status:          &cli_service.TStatus{StatusCode: cli_service.TStatusCode_SUCCESS_STATUS},
+					OperationHandle: operationHandle,
+				}, nil
+			},
+			FnCancelOperation: func(ctx context.Context, req *cli_service.TCancelOperationReq) (_r *cli_service.TCancelOperationResp, _err error) {
+				cancelledHandles = append(cancelledHandles, req.OperationHandle)
+				return &cli_service.TCancelOperationResp{}, nil
+			},
+		}
+		testConn := &conn{
+			session: getTestSession(),
+			client:  testClient,
+			cfg:     config.WithDefaults(),
+		}
+
+		_, err := testConn.executeStatement(ctx, "select 1", []driver.NamedValue{})
+		assert.ErrorIs(t, err, context.Canceled)
+		assert.Equal(t, []*cli_service.TOperationHandle{operationHandle}, cancelledHandles, "the submitted statement is left running")
+	})
+
 	t.Run("ExecStatement should close operation on success", func(t *testing.T) {
 		var executeStatementCount, closeOperationCount int
 		executeStatementResp := &cli_service.TExecuteStatementResp{

@@ -324,7 +324,17 @@ func (c *conn) executeStatement(ctx context.Context, query string, args []driver
 		req.Parameters = parameters
 	}
 
-	resp, err := c.client.ExecuteStatement(ctx, &req)
+	/*
+		Submitted with a context of its own: a submission aborted by ctx would lose the statement's handle, while the server
+		may have started the statement already, which would then keep running. Once ctx is done, the submission is given
+		a while more to complete, for the statement to be cancelled by its handle (below).
+	*/
+	submitCtx, cancelSubmit := context.WithCancel(context.WithoutCancel(ctx))
+	defer cancelSubmit()
+	stopSubmitGrace := context.AfterFunc(ctx, func() { time.AfterFunc(submitGracePeriod, cancelSubmit) })
+	defer stopSubmitGrace()
+
+	resp, err := c.client.ExecuteStatement(submitCtx, &req)
 	var log *logger.DBSQLLogger
 	log, ctx = client.LoggerAndContext(ctx, resp)
 
@@ -361,6 +371,9 @@ func (c *conn) executeStatement(ctx context.Context, query string, args []driver
 
 	return resp, err
 }
+
+// how long a statement's submission may continue once its context is done, to get the statement's handle to cancel it
+const submitGracePeriod = 30 * time.Second
 
 func (c *conn) pollOperation(ctx context.Context, opHandle *cli_service.TOperationHandle) (*cli_service.TGetOperationStatusResp, error) {
 	corrId := driverctx.CorrelationIdFromContext(ctx)
