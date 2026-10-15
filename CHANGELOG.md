@@ -1,5 +1,8 @@
 # Release History
 
+## v1.9.0.3 (2026-10-15)
+- Fix query not being cancelled on the database if the context is cancelled mid-submission
+
 ## v1.9.0.2 (2025-12-22)
 - Expose WithArrowNativeDecimal
 - Expose WithArrowNativeComplexTypes
