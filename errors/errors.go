@@ -2,6 +2,7 @@ package errors
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/pkg/errors"
@@ -118,4 +119,20 @@ type HTTPStatusError struct {
 
 func (e *HTTPStatusError) Error() string {
 	return "unexpected HTTP status " + e.Status
+}
+
+// Category maps the status code to an ErrorCategory: 401 -> CategoryAuthError,
+// 403 -> CategoryPermissionError, 429 -> CategoryRateLimitExceeded.
+// Any other status returns an empty category.
+func (e *HTTPStatusError) Category() ErrorCategory {
+	switch e.StatusCode {
+	case http.StatusUnauthorized:
+		return CategoryAuthError
+	case http.StatusForbidden:
+		return CategoryPermissionError
+	case http.StatusTooManyRequests:
+		return CategoryRateLimitExceeded
+	default:
+		return ""
+	}
 }

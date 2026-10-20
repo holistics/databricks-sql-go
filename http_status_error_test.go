@@ -56,8 +56,9 @@ func TestHTTPStatusError(t *testing.T) {
 		return db, &failStatus
 	}
 
-	requireHTTPStatus := func(t *testing.T, err error, code int, status string) {
+	requireHTTPStatus := func(t *testing.T, err error, code int, status string, category dbsqlerr.ErrorCategory) {
 		require.Error(t, err)
+		require.Equal(t, category, dbsqlerr.CategoryFromError(err))
 		var httpErr *dbsqlerr.HTTPStatusError
 		require.True(t, errors.As(err, &httpErr), "no HTTPStatusError in chain: %v", err)
 		require.Equal(t, code, httpErr.StatusCode)
@@ -69,18 +70,19 @@ func TestHTTPStatusError(t *testing.T) {
 		code         int
 		status       string
 		reasonPhrase string
+		category     dbsqlerr.ErrorCategory
 	}{
-		{http.StatusUnauthorized, "401 Unauthorized", ""},
-		{http.StatusForbidden, "403 Forbidden", ""},
-		{http.StatusUnauthorized, "401 Unauthorized", "invalid token"},
-		{http.StatusForbidden, "403 Forbidden", "permission denied"},
+		{http.StatusUnauthorized, "401 Unauthorized", "", dbsqlerr.CategoryAuthError},
+		{http.StatusForbidden, "403 Forbidden", "", dbsqlerr.CategoryPermissionError},
+		{http.StatusUnauthorized, "401 Unauthorized", "invalid token", dbsqlerr.CategoryAuthError},
+		{http.StatusForbidden, "403 Forbidden", "permission denied", dbsqlerr.CategoryPermissionError},
 	} {
 		t.Run(tc.status+" on connect, reason phrase "+strconv.Quote(tc.reasonPhrase), func(t *testing.T) {
 			db, failStatus := newServer(t, tc.reasonPhrase)
 			failStatus.Store(int32(tc.code))
 
 			_, err := db.Conn(context.Background())
-			requireHTTPStatus(t, err, tc.code, tc.status)
+			requireHTTPStatus(t, err, tc.code, tc.status, tc.category)
 			require.True(t, errors.Is(err, dbsqlerr.RequestError))
 			if tc.reasonPhrase != "" {
 				require.Contains(t, err.Error(), tc.reasonPhrase)
@@ -95,7 +97,7 @@ func TestHTTPStatusError(t *testing.T) {
 			failStatus.Store(int32(tc.code))
 
 			_, err = conn.QueryContext(context.Background(), "select 1")
-			requireHTTPStatus(t, err, tc.code, tc.status)
+			requireHTTPStatus(t, err, tc.code, tc.status, tc.category)
 			require.True(t, errors.Is(err, dbsqlerr.ExecutionError))
 		})
 	}
