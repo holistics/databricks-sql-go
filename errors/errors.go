@@ -106,3 +106,16 @@ type DBExecutionError interface {
 	// See https://github.com/apache/spark/tree/master/core/src/main/resources/error#ansiiso-standard
 	SqlState() string
 }
+
+// HTTPStatusError is returned when a request to Databricks gets a non-200 HTTP response.
+// Use errors.As() with a *HTTPStatusError to read the status code of a failed request.
+type HTTPStatusError struct {
+	// Numeric HTTP status code, e.g. 401
+	StatusCode int
+	// HTTP status line as returned by the server, e.g. "401 Unauthorized"
+	Status string
+}
+
+func (e *HTTPStatusError) Error() string {
+	return "unexpected HTTP status " + e.Status
+}
