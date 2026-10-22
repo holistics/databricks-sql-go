@@ -697,7 +697,7 @@ func RetryPolicy(ctx context.Context, resp *http.Response, err error) (bool, err
 		return false, nil
 	}
 
-	checkErr := fmt.Errorf("unexpected HTTP status %s", resp.Status)
+	checkErr := &dbsqlerr.HTTPStatusError{StatusCode: resp.StatusCode, Status: resp.Status}
 
 	// 429 Too Many Requests or 503 service unavailable is recoverable. Sometimes the server puts
 	// a Retry-After response header to indicate when the server is
