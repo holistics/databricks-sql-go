@@ -1,5 +1,8 @@
 # Release History
 
+## v1.9.0.4 (2026-10-22)
+- Add HTTPStatusError so callers can read the HTTP status code of a failed request instead of parsing the error message
+
 ## v1.9.0.3 (2026-10-15)
 - Fix query not being cancelled on the database if the context is cancelled mid-submission
 
